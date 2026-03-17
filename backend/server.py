@@ -1003,21 +1003,32 @@ async def get_stagiaire_progress(token: str):
     if user["role"] != "stagiaire":
         raise HTTPException(status_code=403, detail="Accès réservé aux stagiaires")
     
-    progress = await db.stagiaire_progress.find_one({"user_id": user["id"]}, {"_id": 0})
-    if not progress:
-        raise HTTPException(status_code=404, detail="Progression non trouvée")
-    
     # Get groupe info
-    groupe = await db.groupes_formation.find_one({"id": user.get("groupe_id")}, {"_id": 0})
+    groupe = await db.groupes.find_one({"id": user.get("groupe_id")}, {"_id": 0})
     
     # Get quiz results
     results = await db.quiz_results.find({"user_id": user["id"]}, {"_id": 0}).to_list(1000)
     
+    # Calculate completed chapters based on quiz results
+    completed_chapters = set()
+    seuil = groupe.get("seuil_validation", 70) if groupe else 70
+    
+    for result in results:
+        if result.get("score", 0) >= seuil:
+            completed_chapters.add(result.get("chapter_id"))
+    
+    # Get total chapters for formation type
+    formation_type = user.get("formation_type", "PSE")
+    total_chapters = await db.chapters.count_documents({"formation_type": formation_type})
+    
     return {
-        "progress": progress,
+        "user_id": user["id"],
+        "formation_type": formation_type,
         "groupe": groupe,
+        "total_chapters": total_chapters,
+        "completed_chapters": len(completed_chapters),
         "quizzes_completed": len(results),
-        "average_score": sum([r["percentage"] for r in results]) / len(results) if results else 0,
+        "average_score": sum([r.get("score", 0) for r in results]) / len(results) if results else 0,
         "quiz_results": results
     }
 
@@ -1029,28 +1040,34 @@ async def get_stagiaire_chapitres(token: str):
     if user["role"] != "stagiaire":
         raise HTTPException(status_code=403, detail="Accès réservé aux stagiaires")
     
-    progress = await db.stagiaire_progress.find_one({"user_id": user["id"]}, {"_id": 0})
-    groupe = await db.groupes_formation.find_one({"id": user.get("groupe_id")}, {"_id": 0})
+    # Get stagiaire's groupe
+    groupe = await db.groupes.find_one({"id": user.get("groupe_id")}, {"_id": 0})
     
-    if not progress or not groupe:
-        raise HTTPException(status_code=404, detail="Données non trouvées")
+    if not groupe:
+        # If no groupe, return empty list
+        return {"chapitres": [], "seuil_reussite": 0}
     
-    # Get all chapters in order defined by formateur
-    all_chapters = await db.chapters.find({"formation_type": groupe["formation_type"]}, {"_id": 0}).to_list(100)
+    # Get formation type from user or groupe
+    formation_type = user.get("formation_type", "PSE")
     
-    # Create a map for quick lookup
-    chapters_map = {ch["id"]: ch for ch in all_chapters}
+    # Get all chapters for this formation type
+    all_chapters = await db.chapters.find({"formation_type": formation_type}, {"_id": 0}).sort("numero", 1).to_list(100)
     
-    # Build response with unlock status
+    # Get user progress
+    progress = await db.quiz_results.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
+    completed_chapter_ids = set()
+    for result in progress:
+        if result.get("score", 0) >= groupe.get("seuil_validation", 70):
+            completed_chapter_ids.add(result.get("chapter_id"))
+    
+    # Build response with unlock status (all unlocked for now, sequential unlock can be added later)
     result = []
-    for ch_id in groupe["chapitres_ordre"]:
-        if ch_id in chapters_map:
-            chapter = chapters_map[ch_id]
-            chapter["is_unlocked"] = ch_id in progress.get("chapitres_debloques", [])
-            chapter["is_completed"] = ch_id in progress.get("chapitres_completes", [])
-            result.append(chapter)
+    for chapter in all_chapters:
+        chapter["is_unlocked"] = True  # All chapters unlocked by default
+        chapter["is_completed"] = chapter["id"] in completed_chapter_ids
+        result.append(chapter)
     
-    return {"chapitres": result, "seuil_reussite": groupe["seuil_reussite"]}
+    return {"chapitres": result, "seuil_reussite": groupe.get("seuil_validation", 70)}
 
 # ============== QUIZ ROUTES ==============
 
