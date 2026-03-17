@@ -1614,10 +1614,26 @@ async def get_bnssa_chapters(token: str):
 
 @api_router.post("/seed")
 async def seed_database():
-    # Check if already seeded
-    existing_users = await db.users.count_documents({})
-    if existing_users > 0:
-        return {"message": "Base de données déjà initialisée", "users": existing_users}
+    # Check if already seeded using a specific flag
+    seed_flag = await db.system_flags.find_one({"flag": "database_seeded"})
+    if seed_flag:
+        # Return existing stats
+        users_count = await db.users.count_documents({})
+        chapters_count = await db.chapters.count_documents({})
+        quizzes_count = await db.quizzes.count_documents({})
+        return {
+            "message": "Base de données déjà initialisée",
+            "users": users_count,
+            "chapters": chapters_count,
+            "quizzes": quizzes_count,
+            "seeded_at": seed_flag.get("created_at", "unknown")
+        }
+    
+    # Clear any existing data to ensure clean seed
+    await db.users.delete_many({})
+    await db.chapters.delete_many({})
+    await db.quizzes.delete_many({})
+    await db.groupes.delete_many({})
     
     # Create admin user
     admin_id = str(uuid.uuid4())
@@ -2296,6 +2312,13 @@ async def seed_database():
     users_count = await db.users.count_documents({})
     chapters_count = await db.chapters.count_documents({})
     quizzes_count = await db.quizzes.count_documents({})
+    
+    # Set seed flag to prevent re-seeding
+    await db.system_flags.insert_one({
+        "flag": "database_seeded",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "version": "1.0"
+    })
     
     return {
         "message": "Base de données initialisée avec succès",
