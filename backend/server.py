@@ -2598,7 +2598,7 @@ async def forgot_password(request: PasswordResetRequest):
     )
     
     # Envoyer l'email
-    reset_url = f"https://secours73.fr/reset-password?token={reset_token}"
+    reset_url = f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={reset_token}"
     
     html_content = f"""
     <html>
