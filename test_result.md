@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Restauration complète de la base de données: Compte admin, Chapitres PSC (8), Chapitres PSE (11), Quiz PSC (8 quiz avec 2 questions), Quiz PSE (11 quiz avec 5 questions chacun)"
+user_problem_statement: "Recréation complète du contenu pédagogique: 12 Chapitres PSE (37 fiches), 8 Chapitres PSC (19 fiches), 20 Quiz (12 PSE + 8 PSC) avec 4-5 questions par chapitre pour un total de 96 questions. Contenu professionnel SANS markdown."
 
 backend:
   - task: "Authentification admin"
@@ -113,45 +113,72 @@ backend:
     priority: "high"
     needs_retesting: false
     status_history:
-      - working: "NA"
-        agent: "main"
-        comment: "Compte admin créé: ledisque.tanguy73@hotmail.com / NewAdmin123!. Hash SHA256 configuré correctement. DB_NAME corrigé vers faod_secours73."
       - working: true
-        agent: "testing"
-        comment: "✅ VALIDÉ - Connexion admin réussie avec les bonnes credentials. Token généré correctement, rôle admin confirmé. API POST /api/auth/login fonctionne parfaitement."
+        agent: "main"
+        comment: "Compte admin: ledisque.tanguy73@hotmail.com / NewAdmin123!. Précédemment validé."
   
-  - task: "Chapitres PSC et PSE"
+  - task: "Chapitres PSE (12)"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "8 chapitres PSC restaurés via create_psc1_complete.py. 11 chapitres PSE restaurés via create_all_pse_chapters.py. Endpoints GET /api/chapters et GET /api/psc/chapters disponibles."
-      - working: true
-        agent: "testing"
-        comment: "✅ VALIDÉ - PSC: 8 chapitres trouvés via GET /api/psc/chapters avec structure complète (id, numero, titre, formation_type, fiches). PSE: 11 chapitres trouvés via GET /api/chapters?formation_type=PSE avec structure complète. Tous les endpoints fonctionnent correctement."
+        comment: "12 chapitres PSE recréés avec 37 fiches au total. Contenu professionnel formaté SANS markdown (pas de #, *, etc). Séparateurs ━━━━━ utilisés. Scripts: recreate_professional_chapters_part1.py, recreate_pse_ch3_6.py, recreate_pse_ch7_12.py, complete_missing_fiches.py, fix_really_missing_fiches.py"
   
-  - task: "Quiz PSC et PSE"
+  - task: "Chapitres PSC (8)"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "19 quiz créés: 8 quiz PSC (2 questions/quiz) + 11 quiz PSE (5 questions/quiz). Total 71 questions basées sur référentiel 2024. Endpoints GET /api/quizzes et GET /api/quizzes/chapter/{chapter_id} disponibles."
-      - working: true
-        agent: "testing"
-        comment: "✅ VALIDÉ - PSC: 8 quiz trouvés (16 questions total, 2 par quiz). PSE: 11 quiz trouvés (55 questions total, 5 par quiz). Structure des questions valide (id, question, type, correct_answer, explication). Endpoints GET /api/quizzes et GET /api/quizzes/chapter/{chapter_id} fonctionnels."
+        comment: "8 chapitres PSC créés avec 19 fiches au total. Contenu professionnel formaté SANS markdown. Scripts: create_psc_chapters_1_4.py, create_psc_chapters_5_8.py. Total base: 20 chapitres, 56 fiches"
+  
+  - task: "Quiz PSE (12)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "12 quiz PSE créés avec 4-5 questions chacun. Scripts: create_quizzes_pse_1_6.py, create_quizzes_pse_7_12.py. Total questions PSE: ~55"
+  
+  - task: "Quiz PSC (8)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "8 quiz PSC créés avec 4-5 questions chacun. Script: create_quizzes_psc_1_8.py. Total questions PSC: ~41. TOTAL GLOBAL: 20 quiz, 96 questions"
 
 frontend:
-  - task: "Page Connexion Admin"
+  - task: "Page d'accueil"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Home.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Page d'accueil affichée correctement. Screenshot validé."
+  
+  - task: "Connexion et navigation"
     implemented: true
     working: "NA"
     file: "/app/frontend/src/pages/Login.jsx"
@@ -161,52 +188,51 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Page de connexion existante. Doit tester la connexion avec le compte admin restauré."
+        comment: "Doit tester connexion admin et navigation vers les chapitres/quiz"
   
-  - task: "Dashboard Admin - Chapitres"
+  - task: "Affichage chapitres PSE/PSC"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/admin/Chapters.jsx"
+    file: "/app/frontend/src/pages/stagiaire/Chapitres.jsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Doit afficher les 8 chapitres PSC et 11 chapitres PSE restaurés."
+        comment: "Doit afficher les 20 chapitres avec leurs fiches. Vérifier formatage professionnel."
   
-  - task: "Dashboard Admin - Quiz"
+  - task: "Affichage quiz"
     implemented: true
     working: "NA"
-    file: "/app/frontend/src/pages/admin/Quizzes.jsx"
+    file: "/app/frontend/src/pages/stagiaire/Quiz.jsx"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Doit afficher les 19 quiz (8 PSC + 11 PSE) avec leurs questions."
+        comment: "Doit afficher les 20 quiz avec 96 questions. Vérifier interactions."
 
 metadata:
-  created_by: "main_agent"
-  version: "3.1"
-  test_sequence: 4
-  run_ui: false
+  created_by: "main_agent_fork"
+  version: "4.0"
+  test_sequence: 5
+  run_ui: true
 
 test_plan:
   current_focus:
-    - "Authentification admin"
-    - "Chapitres PSC et PSE"
-    - "Quiz PSC et PSE"
-    - "Page Connexion Admin"
-    - "Dashboard Admin - Chapitres"
-    - "Dashboard Admin - Quiz"
+    - "Chapitres PSE (12)"
+    - "Chapitres PSC (8)"
+    - "Quiz PSE (12)"
+    - "Quiz PSC (8)"
+    - "Connexion et navigation"
+    - "Affichage chapitres PSE/PSC"
+    - "Affichage quiz"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
 agent_communication:
-  - agent: "main"
-    message: "RESTAURATION COMPLÈTE effectuée après import du repository GitHub. Base de données faod_secours73 recréée avec: 1) Compte admin (ledisque.tanguy73@hotmail.com), 2) 8 chapitres PSC + 11 chapitres PSE (référentiel 2024), 3) 19 quiz avec 71 questions au total (8 quiz PSC avec 2 questions + 11 quiz PSE avec 5 questions chacun). Configuration .env corrigée (DB_NAME=faod_secours73). Backend redémarré. Prêt pour tests de validation avant mise en ligne."
-  - agent: "testing"
-    message: "🎉 VALIDATION COMPLÈTE RÉUSSIE - Tous les critères de validation sont remplis! ✅ Admin auth: ledisque.tanguy73@hotmail.com fonctionne ✅ 8 chapitres PSC avec structure complète ✅ 11 chapitres PSE avec structure complète ✅ 8 quiz PSC (16 questions) ✅ 11 quiz PSE (55 questions) ✅ Comptes test formateur & stagiaire fonctionnels ✅ API accessible (health check OK). Total: 71 questions dans 19 quiz. L'application est prête pour la mise en ligne. Aucune erreur critique détectée dans les logs backend."
+  - agent: "main_agent_fork"
+    message: "RECRÉATION COMPLÈTE DU CONTENU terminée! ✅ 12 chapitres PSE (37 fiches) ✅ 8 chapitres PSC (19 fiches) ✅ 12 quiz PSE ✅ 8 quiz PSC ✅ Total: 20 chapitres, 56 fiches, 20 quiz, 96 questions. Formatage professionnel sans markdown appliqué. Tous les scripts exécutés avec succès. Base de données complète. Prêt pour tests complets backend + frontend."
