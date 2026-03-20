@@ -1630,7 +1630,22 @@ async def get_bnssa_chapters(token: str):
 # ============== SEED DATA ==============
 
 @api_router.post("/seed")
-async def seed_database():
+async def seed_database(token: str = Query(None)):
+    """Initialize database with default data - ADMIN ONLY"""
+    # Require admin authentication
+    if token:
+        try:
+            user = await get_current_user(token)
+            if user["role"] != "admin":
+                raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+        except:
+            raise HTTPException(status_code=401, detail="Token invalide")
+    else:
+        # Allow first seed without token if no users exist
+        users_count = await db.users.count_documents({})
+        if users_count > 0:
+            raise HTTPException(status_code=403, detail="Authentification admin requise")
+    
     # Check if already seeded using a specific flag
     seed_flag = await db.system_flags.find_one({"flag": "database_seeded"})
     if seed_flag:
@@ -2350,6 +2365,31 @@ async def seed_database():
     }
 
 # ============== SITE SETTINGS ==============
+
+
+@api_router.post("/admin/reset-database")
+async def reset_database(token: str):
+    """Reset database completely - ADMIN ONLY - USE WITH CAUTION"""
+    user = await get_current_user(token)
+    
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    # Clear ALL collections
+    await db.users.delete_many({})
+    await db.chapters.delete_many({})
+    await db.quizzes.delete_many({})
+    await db.groupes.delete_many({})
+    await db.quiz_results.delete_many({})
+    await db.documents.delete_many({})
+    await db.site_settings.delete_many({})
+    await db.system_flags.delete_many({})
+    
+    return {
+        "message": "Base de données réinitialisée avec succès",
+        "warning": "Toutes les données ont été supprimées. Appelez /api/seed pour recréer les données initiales."
+    }
+
 
 @api_router.get("/settings")
 async def get_site_settings():
