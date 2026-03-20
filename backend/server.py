@@ -1667,12 +1667,14 @@ async def seed_database(token: str = Query(None)):
     await db.quizzes.delete_many({})
     await db.groupes.delete_many({})
     
-    # Create admin user
+    # Create admin user (credentials from environment variables)
+    admin_email = os.environ.get("ADMIN_EMAIL", "admin@secours73.fr")
+    admin_password = os.environ.get("ADMIN_PASSWORD", "ChangeMe123!")
     admin_id = str(uuid.uuid4())
     admin = {
         "id": admin_id,
-        "email": "ledisque.tanguy73@hotmail.com",
-        "password": hash_password("NewAdmin123!"),
+        "email": admin_email,
+        "password": hash_password(admin_password),
         "nom": "Ledisque",
         "prenom": "Tanguy",
         "role": "admin",
@@ -1680,12 +1682,14 @@ async def seed_database(token: str = Query(None)):
     }
     await db.users.insert_one(admin)
     
-    # Create test formateur
+    # Create test formateur (credentials from environment variables)
+    formateur_email = os.environ.get("TEST_FORMATEUR_EMAIL", "test@secours73.fr")
+    formateur_password = os.environ.get("TEST_FORMATEUR_PASSWORD", "test123")
     formateur_id = str(uuid.uuid4())
     formateur = {
         "id": formateur_id,
-        "email": "test@secours73.fr",
-        "password": hash_password("test123"),
+        "email": formateur_email,
+        "password": hash_password(formateur_password),
         "nom": "Test",
         "prenom": "Formateur",
         "role": "formateur",
@@ -1693,24 +1697,27 @@ async def seed_database(token: str = Query(None)):
     }
     await db.users.insert_one(formateur)
     
-    # Create test groupe
+    # Create test groupe with formation type
     groupe_id = str(uuid.uuid4())
     groupe = {
         "id": groupe_id,
         "nom": "Groupe Test",
         "code": "TEST0000",
+        "formation": "PSE",
         "seuil_validation": 0,
         "formateur_id": formateur_id,
         "chapitres_obligatoires": []
     }
     await db.groupes.insert_one(groupe)
     
-    # Create test stagiaire
+    # Create test stagiaire (credentials from environment variables)
+    stagiaire_email = os.environ.get("TEST_STAGIAIRE_EMAIL", "stagiaire.test@secours73.fr")
+    stagiaire_password = os.environ.get("TEST_STAGIAIRE_PASSWORD", "test123")
     stagiaire_id = str(uuid.uuid4())
     stagiaire = {
         "id": stagiaire_id,
-        "email": "stagiaire.test@secours73.fr",
-        "password": hash_password("test123"),
+        "email": stagiaire_email,
+        "password": hash_password(stagiaire_password),
         "nom": "Test",
         "prenom": "Stagiaire",
         "role": "stagiaire",
