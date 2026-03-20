@@ -17,6 +17,8 @@ import string
 import shutil
 import asyncio
 import aiosmtplib
+import re
+import subprocess
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from io import BytesIO
@@ -2260,84 +2262,39 @@ async def seed_database(token: str = Query(None)):
     }
     await db.chapters.insert_one(bnssa_chapter)
     
-    # Create 8 PSC chapters
-    psc_chapters = [
-        {
-            "id": "psc1-ch1",
-            "numero": 1,
-            "titre": "Informations générales et Protection",
-            "description": "Le citoyen de sécurité civile, alerte et protection des populations, principes de protection.",
-            "icon": "Shield",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f1-1", "titre": "Le citoyen de Sécurité Civile", "contenu": "Protection juridique et messages clés sur la prévention des accidents."}]
-        },
-        {
-            "id": "psc1-ch2",
-            "numero": 2,
-            "titre": "Obstruction des voies aériennes",
-            "description": "Reconnaître une obstruction totale ou partielle, manœuvres de désobstruction.",
-            "icon": "Wind",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f2-1", "titre": "Obstruction totale", "contenu": "Claques dans le dos et compressions abdominales (Heimlich)."}]
-        },
-        {
-            "id": "psc1-ch3",
-            "numero": 3,
-            "titre": "Hémorragies externes",
-            "description": "Reconnaître une hémorragie, compression directe, pansement compressif.",
-            "icon": "Droplet",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f3-1", "titre": "Compression directe", "contenu": "Appuyer fortement sur la plaie avec un linge propre."}]
-        },
-        {
-            "id": "psc1-ch4",
-            "numero": 4,
-            "titre": "Perte de connaissance",
-            "description": "Vérifier la conscience, libérer les voies aériennes, PLS.",
-            "icon": "UserX",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f4-1", "titre": "Position Latérale de Sécurité", "contenu": "Mettre la victime sur le côté pour éviter l'étouffement."}]
-        },
-        {
-            "id": "psc1-ch5",
-            "numero": 5,
-            "titre": "Arrêt cardiaque",
-            "description": "Massage cardiaque, utilisation du DAE, insufflations.",
-            "icon": "Heart",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f5-1", "titre": "Réanimation cardio-pulmonaire", "contenu": "30 compressions thoraciques puis 2 insufflations, rythme 100-120/min."}]
-        },
-        {
-            "id": "psc1-ch6",
-            "numero": 6,
-            "titre": "Malaises",
-            "description": "Reconnaître un malaise, mettre au repos, alerter si nécessaire.",
-            "icon": "AlertCircle",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f6-1", "titre": "Conduite à tenir", "contenu": "Mettre la victime au repos, desserrer les vêtements, alerter le 15."}]
-        },
-        {
-            "id": "psc1-ch7",
-            "numero": 7,
-            "titre": "Plaies et Brûlures",
-            "description": "Plaies simples et graves, brûlures thermiques, chimiques, électriques.",
-            "icon": "Flame",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f7-1", "titre": "Plaies graves", "contenu": "Ne pas retirer le corps étranger, protéger avec un pansement stérile."}]
-        },
-        {
-            "id": "psc1-ch8",
-            "numero": 8,
-            "titre": "Traumatismes",
-            "description": "Traumatismes des os et articulations, immobilisation, surveillance.",
-            "icon": "Bone",
-            "formation_type": "PSC",
-            "fiches": [{"id": "psc1-f8-1", "titre": "Immobilisation", "contenu": "Immobiliser dans la position trouvée, ne pas mobiliser en cas de douleur."}]
-        }
-    ]
+    # Create 8 complete PSC chapters by running external scripts
+    # This imports the full professional content
+    import subprocess
+    import sys
     
-    for psc_chapter in psc_chapters:
-        await db.chapters.insert_one(psc_chapter)
+    # Run PSC chapters creation scripts
+    try:
+        # Execute PSC 1-4
+        result_1_4 = subprocess.run(
+            [sys.executable, '/app/create_psc_chapters_1_4.py'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        # Execute PSC 5-8
+        result_5_8 = subprocess.run(
+            [sys.executable, '/app/create_psc_chapters_5_8.py'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        logger.info(f"PSC chapters creation: {result_1_4.stdout} {result_5_8.stdout}")
+    except Exception as e:
+        logger.error(f"Error creating PSC chapters: {str(e)}")
+        # Fallback: create minimal PSC chapters if scripts fail
+        minimal_psc = [
+            {"id": f"psc-ch{i}", "numero": i, "titre": f"Chapitre PSC {i}", "formation_type": "PSC", "fiches": []}
+            for i in range(1, 9)
+        ]
+        for ch in minimal_psc:
+            await db.chapters.insert_one(ch)
     
     # Create quiz for ALL chapters (PSE + PSC)
     all_chapters = await db.chapters.find({}, {"_id": 0}).to_list(100)
