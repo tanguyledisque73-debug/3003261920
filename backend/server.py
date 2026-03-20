@@ -2403,6 +2403,41 @@ async def get_site_settings():
         "images": images
     }
 
+@api_router.post("/admin/force-reseed")
+async def force_reseed(token: str = Query(...)):
+    """Force complete database reseed - ADMIN ONLY - USE WITH CAUTION"""
+    user = await get_current_user(token)
+    
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    try:
+        # Remove the seeded flag to allow reseed
+        await db.system_flags.delete_many({"flag": "database_seeded"})
+        
+        # Clear all data
+        deleted_users = await db.users.delete_many({})
+        deleted_chapters = await db.chapters.delete_many({})
+        deleted_quizzes = await db.quizzes.delete_many({})
+        deleted_groupes = await db.groupes.delete_many({})
+        
+        logger.info(f"Force reseed: cleared {deleted_users.deleted_count} users, {deleted_chapters.deleted_count} chapters, {deleted_quizzes.deleted_count} quizzes, {deleted_groupes.deleted_count} groupes")
+        
+        return {
+            "success": True,
+            "message": "Database cleared. Call /api/seed to reinitialize with new content.",
+            "deleted": {
+                "users": deleted_users.deleted_count,
+                "chapters": deleted_chapters.deleted_count,
+                "quizzes": deleted_quizzes.deleted_count,
+                "groupes": deleted_groupes.deleted_count
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error in force reseed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.put("/admin/settings")
 async def update_site_settings(
     settings: SiteSettingsUpdate,
