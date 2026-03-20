@@ -2790,7 +2790,7 @@ async def send_welcome_email_to_stagiaire(stagiaire_email: str, token: str):
         <p><strong>L'équipe pédagogique<br>Secours 73</strong></p>
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
         <p style="text-align: center; margin: 20px 0;">
-            <a href="https://secours73.fr/login" 
+            <a href="{os.environ.get('FRONTEND_URL', 'https://secours73.fr')}/login" 
                style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Accéder à la plateforme
             </a>
@@ -2822,7 +2822,7 @@ async def send_welcome_email_internal(stagiaire_email: str, stagiaire_prenom: st
         <p><strong>L'équipe pédagogique<br>Secours 73</strong></p>
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
         <p style="text-align: center; margin: 20px 0;">
-            <a href="https://secours73.fr/login" 
+            <a href="{os.environ.get('FRONTEND_URL', 'https://secours73.fr')}/login" 
                style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Accéder à la plateforme
             </a>
@@ -2869,7 +2869,7 @@ async def formateur_send_email(
             Formateur - Secours 73
         </p>
         <p style="text-align: center; margin: 20px 0;">
-            <a href="https://secours73.fr/login" 
+            <a href="{os.environ.get('FRONTEND_URL', 'https://secours73.fr')}/login" 
                style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Accéder à la plateforme
             </a>

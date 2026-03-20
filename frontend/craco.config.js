@@ -64,7 +64,7 @@ webpackConfig.devServer = (devServerConfig) => {
   // Add proxy for API calls to backend
   devServerConfig.proxy = {
     '/api': {
-      target: 'http://localhost:8001',
+      target: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001',
       changeOrigin: true,
       secure: false,
     },
