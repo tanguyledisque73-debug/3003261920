@@ -2227,24 +2227,8 @@ async def seed_database(token: str = Query(None)):
     for quiz in quizzes:
         await db.quizzes.insert_one(quiz)
     
-    # Create placeholder chapters for PSC and BNSSA
-    psc_chapter = {
-        "id": "psc-1",
-        "numero": 1,
-        "titre": "Premiers Secours Citoyen - Introduction",
-        "description": "Contenu à venir - Formation aux gestes de premiers secours pour le grand public.",
-        "icon": "Heart",
-        "formation_type": "PSC",
-        "fiches": [
-            {
-                "id": "psc-1-1",
-                "titre": "Introduction au PSC",
-                "contenu": "Contenu en cours de création. Cette section présentera les bases des premiers secours accessibles à tous les citoyens."
-            }
-        ]
-    }
-    await db.chapters.insert_one(psc_chapter)
-    
+    # Note: PSC chapters are created below with full professional content
+    # BNSSA chapter placeholder (to be developed later)
     bnssa_chapter = {
         "id": "bnssa-1",
         "numero": 1,
@@ -2262,39 +2246,31 @@ async def seed_database(token: str = Query(None)):
     }
     await db.chapters.insert_one(bnssa_chapter)
     
-    # Create 8 complete PSC chapters by running external scripts
-    # This imports the full professional content
-    import subprocess
-    import sys
-    
-    # Run PSC chapters creation scripts
+    # Create 8 complete PSC chapters with professional content
     try:
-        # Execute PSC 1-4
-        result_1_4 = subprocess.run(
-            [sys.executable, '/app/create_psc_chapters_1_4.py'],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        from psc_data import PSC_CHAPTERS
+        logger.info(f"Importing {len(PSC_CHAPTERS)} PSC chapters from psc_data module")
         
-        # Execute PSC 5-8
-        result_5_8 = subprocess.run(
-            [sys.executable, '/app/create_psc_chapters_5_8.py'],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
+        for psc_chapter in PSC_CHAPTERS:
+            await db.chapters.insert_one(psc_chapter)
         
-        logger.info(f"PSC chapters creation: {result_1_4.stdout} {result_5_8.stdout}")
+        logger.info(f"Successfully inserted {len(PSC_CHAPTERS)} PSC chapters")
     except Exception as e:
-        logger.error(f"Error creating PSC chapters: {str(e)}")
-        # Fallback: create minimal PSC chapters if scripts fail
-        minimal_psc = [
-            {"id": f"psc-ch{i}", "numero": i, "titre": f"Chapitre PSC {i}", "formation_type": "PSC", "fiches": []}
-            for i in range(1, 9)
-        ]
-        for ch in minimal_psc:
-            await db.chapters.insert_one(ch)
+        logger.error(f"Error importing/inserting PSC chapters: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        # Fallback: create minimal PSC to avoid breaking seed
+        logger.info("Creating minimal PSC chapters as fallback")
+        for i in range(1, 9):
+            await db.chapters.insert_one({
+                "id": f"psc-ch{i}",
+                "numero": i,
+                "titre": f"Chapitre PSC {i}",
+                "description": "Contenu à venir",
+                "formation_type": "PSC",
+                "icon": "Shield",
+                "fiches": []
+            })
     
     # Create quiz for ALL chapters (PSE + PSC)
     all_chapters = await db.chapters.find({}, {"_id": 0}).to_list(100)
