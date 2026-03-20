@@ -998,39 +998,54 @@ async def get_chapter(chapter_id: str, token: Optional[str] = None):
 @api_router.get("/stagiaire/progress")
 async def get_stagiaire_progress(token: str):
     """Get current stagiaire's progress"""
-    user = await get_current_user(token)
-    
-    if user["role"] != "stagiaire":
-        raise HTTPException(status_code=403, detail="Accès réservé aux stagiaires")
-    
-    # Get groupe info
-    groupe = await db.groupes.find_one({"id": user.get("groupe_id")}, {"_id": 0})
-    
-    # Get quiz results
-    results = await db.quiz_results.find({"user_id": user["id"]}, {"_id": 0}).to_list(1000)
-    
-    # Calculate completed chapters based on quiz results
-    completed_chapters = set()
-    seuil = groupe.get("seuil_validation", 70) if groupe else 70
-    
-    for result in results:
-        if result.get("score", 0) >= seuil:
-            completed_chapters.add(result.get("chapter_id"))
-    
-    # Get total chapters for formation type
-    formation_type = user.get("formation_type", "PSE")
-    total_chapters = await db.chapters.count_documents({"formation_type": formation_type})
-    
-    return {
-        "user_id": user["id"],
-        "formation_type": formation_type,
-        "groupe": groupe,
-        "total_chapters": total_chapters,
-        "completed_chapters": len(completed_chapters),
-        "quizzes_completed": len(results),
-        "average_score": sum([r.get("score", 0) for r in results]) / len(results) if results else 0,
-        "quiz_results": results
-    }
+    try:
+        user = await get_current_user(token)
+        
+        if user["role"] != "stagiaire":
+            raise HTTPException(status_code=403, detail="Accès réservé aux stagiaires")
+        
+        # Get groupe info
+        groupe = await db.groupes.find_one({"id": user.get("groupe_id")}, {"_id": 0})
+        
+        # AUTO-FIX: If groupe doesn't have formation, set it from user's formation_type
+        if groupe and not groupe.get("formation"):
+            formation_from_user = user.get("formation_type", "PSE")
+            await db.groupes.update_one(
+                {"id": groupe["id"]},
+                {"$set": {"formation": formation_from_user}}
+            )
+            groupe["formation"] = formation_from_user
+        
+        # Get quiz results
+        results = await db.quiz_results.find({"user_id": user["id"]}, {"_id": 0}).to_list(1000)
+        
+        # Calculate completed chapters based on quiz results
+        completed_chapters = set()
+        seuil = groupe.get("seuil_validation", 70) if groupe else 70
+        
+        for result in results:
+            if result.get("score", 0) >= seuil:
+                completed_chapters.add(result.get("chapter_id"))
+        
+        # Get total chapters for formation type
+        formation_type = groupe.get("formation") if groupe and groupe.get("formation") else user.get("formation_type", "PSE")
+        total_chapters = await db.chapters.count_documents({"formation_type": formation_type})
+        
+        return {
+            "user_id": user["id"],
+            "formation_type": formation_type,
+            "groupe": groupe,
+            "total_chapters": total_chapters,
+            "completed_chapters": len(completed_chapters),
+            "quizzes_completed": len(results),
+            "average_score": sum([r.get("score", 0) for r in results]) / len(results) if results else 0,
+            "quiz_results": results
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in get_stagiaire_progress: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erreur serveur")
 
 @api_router.get("/stagiaire/chapitres")
 async def get_stagiaire_chapitres(token: str):
@@ -1047,8 +1062,18 @@ async def get_stagiaire_chapitres(token: str):
         # If no groupe, return empty list
         return {"chapitres": [], "seuil_reussite": 0}
     
-    # Get formation type from user or groupe
-    formation_type = user.get("formation_type", "PSE")
+    # AUTO-FIX: If groupe doesn't have formation, set it from user's formation_type
+    if not groupe.get("formation"):
+        formation_from_user = user.get("formation_type", "PSE")
+        # Update the groupe in database
+        await db.groupes.update_one(
+            {"id": groupe["id"]},
+            {"$set": {"formation": formation_from_user}}
+        )
+        groupe["formation"] = formation_from_user
+    
+    # Get formation type: prioritize groupe formation, fallback to user, default to PSE
+    formation_type = groupe.get("formation") or user.get("formation_type", "PSE")
     
     # Get all chapters for this formation type
     all_chapters = await db.chapters.find({"formation_type": formation_type}, {"_id": 0}).sort("numero", 1).to_list(100)
