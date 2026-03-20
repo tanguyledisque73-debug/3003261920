@@ -2391,6 +2391,34 @@ async def reset_database(token: str):
     }
 
 
+@api_router.post("/admin/fix-groupe-formation")
+async def fix_groupe_formation(token: str, groupe_code: str = "TEST0000", formation: str = "PSE"):
+    """Fix groupe formation type - ADMIN ONLY"""
+    user = await get_current_user(token)
+    
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    # Update groupe
+    result = await db.groupes.update_one(
+        {"code": groupe_code},
+        {"$set": {"formation": formation}}
+    )
+    
+    if result.modified_count > 0:
+        groupe = await db.groupes.find_one({"code": groupe_code}, {"_id": 0})
+        return {
+            "success": True,
+            "message": f"Groupe {groupe_code} mis à jour avec formation {formation}",
+            "groupe": groupe
+        }
+    else:
+        return {
+            "success": False,
+            "message": f"Groupe {groupe_code} non trouvé ou déjà à jour"
+        }
+
+
 @api_router.get("/settings")
 async def get_site_settings():
     """Get public site settings (HelloAsso link, images)"""
