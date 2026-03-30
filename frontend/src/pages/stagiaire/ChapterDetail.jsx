@@ -60,9 +60,10 @@ const StagiaireChapterDetail = () => {
     const renderContent = (content) => {
         const lines = content.split('\n');
         return lines.map((line, index) => {
+            const lineKey = `line-${index}-${line.substring(0, 20)}`; // More stable key
             if (line.startsWith('**') && line.endsWith('**')) {
                 return (
-                    <h3 key={index} className="font-semibold text-slate-900 mt-4 mb-2">
+                    <h3 key={lineKey} className="font-semibold text-slate-900 mt-4 mb-2">
                         {line.replace(/\*\*/g, '')}
                     </h3>
                 );
@@ -70,32 +71,32 @@ const StagiaireChapterDetail = () => {
             if (line.includes('**')) {
                 const parts = line.split(/\*\*(.*?)\*\*/g);
                 return (
-                    <p key={index} className="mb-2">
+                    <p key={lineKey} className="mb-2">
                         {parts.map((part, i) => 
-                            i % 2 === 1 ? <strong key={i} className="font-semibold text-slate-900">{part}</strong> : part
+                            i % 2 === 1 ? <strong key={`bold-${i}-${part.substring(0, 10)}`} className="font-semibold text-slate-900">{part}</strong> : part
                         )}
                     </p>
                 );
             }
             if (line.startsWith('- ')) {
                 return (
-                    <li key={index} className="ml-4 mb-1 text-slate-700">
+                    <li key={lineKey} className="ml-4 mb-1 text-slate-700">
                         {line.substring(2)}
                     </li>
                 );
             }
             if (/^\d+\./.test(line)) {
                 return (
-                    <li key={index} className="ml-4 mb-1 text-slate-700 list-decimal">
+                    <li key={lineKey} className="ml-4 mb-1 text-slate-700 list-decimal">
                         {line.replace(/^\d+\.\s*/, '')}
                     </li>
                 );
             }
             if (line.trim() === '') {
-                return <br key={index} />;
+                return <br key={lineKey} />;
             }
             return (
-                <p key={index} className="mb-2 text-slate-700 leading-relaxed">
+                <p key={lineKey} className="mb-2 text-slate-700 leading-relaxed">
                     {line}
                 </p>
             );

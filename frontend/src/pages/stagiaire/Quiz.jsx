@@ -38,7 +38,7 @@ const StagiaireQuiz = () => {
             return;
         }
         loadData();
-    }, [chapterId]);
+    }, [chapterId, user, navigate]); // Added dependencies
 
     const loadData = async () => {
         try {
@@ -337,7 +337,7 @@ const StagiaireQuiz = () => {
                         <div className="space-y-3">
                             {question.options.map((option, index) => (
                                 <button
-                                    key={index}
+                                    key={`option-${currentQuestion}-${index}-${option.substring(0, 10)}`}
                                     onClick={() => handleSelectAnswer(index)}
                                     className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                                         selectedAnswer === index

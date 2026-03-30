@@ -336,8 +336,8 @@ def generate_token() -> str:
     return secrets.token_hex(32)
 
 def generate_code_groupe() -> str:
-    """Generate a unique 8-character group code"""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    """Generate a unique 8-character group code using cryptographically secure random"""
+    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
 
 # Simple token storage
 active_tokens = {}
@@ -1711,7 +1711,8 @@ async def seed_database(token: str = Query(None)):
             user = await get_current_user(token)
             if user["role"] != "admin":
                 raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
-        except:
+        except Exception as e:
+            logger.error(f"Token validation failed: {e}")
             raise HTTPException(status_code=401, detail="Token invalide")
     else:
         # Allow first seed without token if no users exist
@@ -3234,7 +3235,7 @@ async def create_video(
 
 
 @api_router.delete("/admin/video/{video_id}")
-async def delete_video(
+async def admin_delete_video(
     video_id: str,
     token: str = Query(...)
 ):

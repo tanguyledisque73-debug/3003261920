@@ -39,7 +39,7 @@ const AdminQuizEditor = () => {
             return;
         }
         loadData();
-    }, [quizId]);
+    }, [quizId, user, navigate]); // Added dependencies
 
     const loadData = async () => {
         try {

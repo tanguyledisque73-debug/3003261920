@@ -8,13 +8,13 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://code-migrate-3.preview.emergentagent.com')
 
-# Test credentials from backend/.env
-ADMIN_EMAIL = "ledisque.tanguy73@hotmail.com"
-ADMIN_PASSWORD = "NewAdmin123!"
-FORMATEUR_EMAIL = "test@secours73.fr"
-FORMATEUR_PASSWORD = "test123"
-STAGIAIRE_EMAIL = "stagiaire.test@secours73.fr"
-STAGIAIRE_PASSWORD = "test123"
+# Test credentials from environment variables
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@test.local")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "test_password")
+FORMATEUR_EMAIL = os.environ.get("TEST_FORMATEUR_EMAIL", "formateur@test.local")
+FORMATEUR_PASSWORD = os.environ.get("TEST_FORMATEUR_PASSWORD", "test_password")
+STAGIAIRE_EMAIL = os.environ.get("TEST_STAGIAIRE_EMAIL", "stagiaire@test.local")
+STAGIAIRE_PASSWORD = os.environ.get("TEST_STAGIAIRE_PASSWORD", "test_password")
 
 
 class TestCustomizationAPI:

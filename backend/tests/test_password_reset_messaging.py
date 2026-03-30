@@ -13,9 +13,9 @@ import uuid
 # Use environment variable for base URL
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials - Admin user
-ADMIN_EMAIL = "ledisque.tanguy73@hotmail.com"
-ADMIN_PASSWORD = "Admin123!"
+# Test credentials from environment variables
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@test.local")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "test_password")
 
 
 class TestPasswordReset:

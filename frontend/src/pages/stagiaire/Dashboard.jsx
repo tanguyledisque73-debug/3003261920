@@ -36,7 +36,7 @@ const StagiaireDashboard = () => {
             return;
         }
         loadData();
-    }, []);
+    }, [user, navigate]); // Added dependencies
 
     const loadData = async () => {
         try {
