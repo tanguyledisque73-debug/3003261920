@@ -14,10 +14,13 @@ import {
 import { Button } from '../components/ui/button';
 import Layout from '../components/Layout';
 import { seedDatabase, getUser, getSiteSettings } from '../lib/api';
+import { useCustomization, getStyleForElement } from '../hooks/useCustomization';
+import BannerDisplay from '../components/BannerDisplay';
 
 const Landing = () => {
     const user = getUser();
     const [settings, setSettings] = useState({ helloasso_url: '', helloasso_enabled: false });
+    const { customization, loading } = useCustomization();
 
     useEffect(() => {
         const initApp = async () => {
@@ -75,14 +78,22 @@ const Landing = () => {
         }
     ];
 
+    // Obtenir les styles personnalisés
+    const heroTitleStyle = customization ? getStyleForElement(customization, 'hero_title') : {};
+    const heroSubtitleStyle = customization ? getStyleForElement(customization, 'hero_subtitle') : {};
+    const sectionTitleStyle = customization ? getStyleForElement(customization, 'section_title') : {};
+
     return (
         <Layout>
-            {/* Hero Section - Simplifié */}
+            {/* Hero Section - Personnalisable */}
             <section className="hero-gradient py-16 md:py-24 relative overflow-hidden" data-testid="hero-section">
                 <div className="absolute inset-0 mountain-pattern opacity-50"></div>
                 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-                    <div className="text-center animate-fade-in">
+                    {/* Bannière Hero */}
+                    <BannerDisplay position="home_hero" />
+                    
+                    <div className="text-center animate-fade-in mt-8">
                         <div className="flex items-center justify-center mb-6">
                             <img 
                                 src="/images/logo-secours73.png" 
@@ -91,9 +102,24 @@ const Landing = () => {
                             />
                         </div>
                         
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-slate-900 mb-6">
-                            Formez-vous aux <span className="text-red-600">premiers secours</span>
+                        <h1 
+                            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
+                            style={{
+                                ...heroTitleStyle,
+                                color: heroTitleStyle.color || (customization?.primary_color || '#0f172a')
+                            }}
+                        >
+                            {customization?.hero_title || 'Formez-vous aux premiers secours'}
                         </h1>
+                        
+                        {customization?.hero_subtitle && (
+                            <p 
+                                className="text-lg md:text-xl mb-8 max-w-3xl mx-auto"
+                                style={heroSubtitleStyle}
+                            >
+                                {customization.hero_subtitle}
+                            </p>
+                        )}
                         
                         {user && (
                             <div className="mt-8">
@@ -160,7 +186,10 @@ const Landing = () => {
             <section className="py-16 md:py-24 bg-white" data-testid="formations-section">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+                        <h2 
+                            className="text-3xl md:text-4xl font-bold mb-4"
+                            style={sectionTitleStyle}
+                        >
                             Nos formations
                         </h2>
                         <p className="text-lg text-slate-600 max-w-2xl mx-auto">

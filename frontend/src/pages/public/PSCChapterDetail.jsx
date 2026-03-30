@@ -15,6 +15,7 @@ import { ScrollArea } from '../../components/ui/scroll-area';
 import Layout from '../../components/Layout';
 import { getChapter } from '../../lib/api';
 import { toast } from 'sonner';
+import VideoPlayer from '../../components/VideoPlayer';
 
 const PSCChapterDetail = () => {
     const { chapterId } = useParams();
@@ -238,6 +239,12 @@ const PSCChapterDetail = () => {
 
                     {/* Main Content */}
                     <div className="lg:col-span-3">
+                        {/* Vidéos en haut du chapitre */}
+                        <VideoPlayer 
+                            chapterId={chapterId} 
+                            position="top" 
+                        />
+                        
                         <Card data-testid="fiche-content">
                             {currentFiche?.image_url && (
                                 <div className="w-full h-64 overflow-hidden rounded-t-lg">
@@ -254,9 +261,23 @@ const PSCChapterDetail = () => {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-6">
+                                {/* Vidéos de la fiche */}
+                                <VideoPlayer 
+                                    chapterId={chapterId}
+                                    ficheId={currentFiche?.id}
+                                    position="top" 
+                                />
+                                
                                 <div className="prose prose-slate max-w-none">
                                     {renderContent(currentFiche?.contenu || '')}
                                 </div>
+                                
+                                {/* Vidéos en bas de la fiche */}
+                                <VideoPlayer 
+                                    chapterId={chapterId}
+                                    ficheId={currentFiche?.id}
+                                    position="bottom" 
+                                />
                             </CardContent>
                         </Card>
 

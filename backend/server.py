@@ -3089,23 +3089,17 @@ async def delete_document(doc_id: str, token: str = Query(...)):
 @api_router.get("/customization")
 async def get_site_customization():
     """Get current site customization settings (public)"""
-    customization = await db.site_customization.find_one({"type": "main"}, {"_id": 0})
+    customization = await db.customization_settings.find_one({}, {"_id": 0})
     if not customization:
         # Return default customization
         return {
-            "home_page": {
-                "hero_title": "Bienvenue sur FAOD-SECOURS73",
-                "hero_subtitle": "Formation professionnelle aux premiers secours",
-                "hero_description": "Plateforme de formation en ligne pour les secouristes",
-                "hero_button_text": "Commencer",
-                "hero_button_link": "/login",
-                "sections": []
-            },
-            "styles": {},
-            "banners": [],
+            "hero_title": "Formez-vous aux premiers secours",
+            "hero_subtitle": "Plateforme de formation en ligne Secours Alpes 73",
             "primary_color": "#dc2626",
-            "secondary_color": "#1f2937",
-            "accent_color": "#3b82f6"
+            "secondary_color": "#0f172a",
+            "accent_color": "#f97316",
+            "styles": {},
+            "banners": []
         }
     return customization
 

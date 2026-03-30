@@ -233,6 +233,32 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+  - task: "Système de personnalisation - Phase 3"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Landing.jsx, /app/frontend/src/hooks/useCustomization.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Phase 3 terminée: intégration du hook useCustomization dans Landing.jsx, BannerDisplay intégré, correction de l'API /api/customization pour utiliser la collection customization_settings. Paramètres par défaut créés en base."
+
+  - task: "Intégration vidéos aux chapitres"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/stagiaire/ChapterDetail.jsx, /app/frontend/src/pages/public/PSCChapterDetail.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Composant VideoPlayer intégré dans les pages de détail des chapitres (stagiaire et public PSC). Vidéos peuvent être affichées en top/bottom du chapitre et des fiches."
+
 agent_communication:
   - agent: "main_agent_fork"
     message: "RECRÉATION COMPLÈTE DU CONTENU terminée! ✅ 12 chapitres PSE (37 fiches) ✅ 8 chapitres PSC (19 fiches) ✅ 12 quiz PSE ✅ 8 quiz PSC ✅ Total: 20 chapitres, 56 fiches, 20 quiz, 96 questions. Formatage professionnel sans markdown appliqué. Tous les scripts exécutés avec succès. Base de données complète. Prêt pour tests complets backend + frontend."
+  - agent: "main_agent_continuation"
+    message: "✅ Phase 3 personnalisation TERMINÉE: hook useCustomization intégré dans Landing.jsx, API customization corrigée, settings par défaut créés. ✅ Intégration vidéos TERMINÉE: VideoPlayer intégré dans ChapterDetail.jsx et PSCChapterDetail.jsx avec support multi-positions. Prêt pour tests complets."
