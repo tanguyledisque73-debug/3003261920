@@ -6,7 +6,8 @@ import {
     BookOpen,
     TrendingUp,
     Settings,
-    ArrowRight
+    ArrowRight,
+    Palette
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -120,7 +121,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                <div className="grid md:grid-cols-4 gap-6 mb-8">
                     <Card className="card-hover">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between">
@@ -165,6 +166,26 @@ const AdminDashboard = () => {
                                 <Link to="/admin/quizzes">
                                     <Button className="bg-red-600 hover:bg-red-700">
                                         Gérer
+                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card className="card-hover bg-gradient-to-br from-red-50 to-pink-50">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-semibold text-slate-900 mb-1 flex items-center">
+                                        <Palette className="w-5 h-5 mr-2 text-red-600" />
+                                        Personnalisation du site
+                                    </h3>
+                                    <p className="text-sm text-slate-600">Couleurs, polices, bannières, vidéos</p>
+                                </div>
+                                <Link to="/admin/customization">
+                                    <Button className="bg-red-600 hover:bg-red-700">
+                                        Personnaliser
                                         <ArrowRight className="w-4 h-4 ml-2" />
                                     </Button>
                                 </Link>

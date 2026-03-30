@@ -37,6 +37,7 @@ import AdminQuizEditor from "./pages/admin/QuizEditor";
 import AdminChapters from "./pages/admin/Chapters";
 import AdminChapterEditor from "./pages/admin/ChapterEditor";
 import AdminSettings from "./pages/admin/Settings";
+import AdminCustomization from "./pages/admin/Customization";
 
 // Visiteur Pages
 import VisiteurDashboard from "./pages/visiteur/Dashboard";
@@ -268,6 +269,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminSettings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/customization" 
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminCustomization />
               </ProtectedRoute>
             } 
           />
