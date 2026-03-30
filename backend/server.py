@@ -149,6 +149,52 @@ class GroupeFormationResponse(BaseModel):
     is_active: bool
     created_at: str
 
+# Site Customization Models
+class BannerImage(BaseModel):
+    id: Optional[str] = None
+    title: str
+    image_url: str
+    link: Optional[str] = None
+    position: str  # "home_hero", "home_banner", "header", "chapter_top", "custom"
+    order: int = 0
+    is_active: bool = True
+
+class VideoContent(BaseModel):
+    id: Optional[str] = None
+    title: str
+    video_type: str  # "upload", "youtube", "vimeo"
+    video_url: str  # URL or file path
+    thumbnail_url: Optional[str] = None
+    duration: Optional[str] = None
+    chapter_id: Optional[str] = None
+    fiche_id: Optional[str] = None
+    position: str = "top"  # "top", "inline", "bottom"
+
+class StyleCustomization(BaseModel):
+    element_type: str  # "title", "subtitle", "text", "button", "menu"
+    color: Optional[str] = None
+    font_family: Optional[str] = None
+    font_size: Optional[str] = None
+    font_weight: Optional[str] = None
+    font_style: Optional[str] = None  # "normal", "italic"
+    text_align: Optional[str] = None  # "left", "center", "right"
+
+class HomePageContent(BaseModel):
+    hero_title: str
+    hero_subtitle: str
+    hero_description: str
+    hero_button_text: str
+    hero_button_link: str
+    sections: List[Dict[str, Any]] = []  # Dynamic sections
+
+class SiteCustomization(BaseModel):
+    home_page: Optional[HomePageContent] = None
+    styles: Optional[Dict[str, StyleCustomization]] = None
+    banners: Optional[List[BannerImage]] = None
+    primary_color: Optional[str] = "#dc2626"
+    secondary_color: Optional[str] = "#1f2937"
+    accent_color: Optional[str] = "#3b82f6"
+
 # Quiz Models
 class QuizQuestionCreate(BaseModel):
     question: str
@@ -3033,6 +3079,264 @@ async def delete_document(doc_id: str, token: str = Query(...)):
     await db.documents.delete_one({"id": doc_id})
     
     return {"status": "success", "message": "Document supprimé"}
+
+
+
+# ============================================================================
+# CUSTOMIZATION ENDPOINTS - Site Personalization
+# ============================================================================
+
+@api_router.get("/customization")
+async def get_site_customization():
+    """Get current site customization settings (public)"""
+    customization = await db.site_customization.find_one({"type": "main"}, {"_id": 0})
+    if not customization:
+        # Return default customization
+        return {
+            "home_page": {
+                "hero_title": "Bienvenue sur FAOD-SECOURS73",
+                "hero_subtitle": "Formation professionnelle aux premiers secours",
+                "hero_description": "Plateforme de formation en ligne pour les secouristes",
+                "hero_button_text": "Commencer",
+                "hero_button_link": "/login",
+                "sections": []
+            },
+            "styles": {},
+            "banners": [],
+            "primary_color": "#dc2626",
+            "secondary_color": "#1f2937",
+            "accent_color": "#3b82f6"
+        }
+    return customization
+
+
+@api_router.put("/admin/customization")
+async def update_site_customization(
+    customization: SiteCustomization,
+    token: str = Query(...)
+):
+    """Update site customization (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    customization_data = customization.model_dump(exclude_none=True)
+    customization_data["type"] = "main"
+    customization_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    customization_data["updated_by"] = user["id"]
+    
+    await db.site_customization.update_one(
+        {"type": "main"},
+        {"$set": customization_data},
+        upsert=True
+    )
+    
+    return {"message": "Personnalisation mise à jour", "data": customization_data}
+
+
+@api_router.get("/admin/banners")
+async def get_banners(token: str = Query(...)):
+    """Get all banners (Admin)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    banners = await db.banners.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return banners
+
+
+@api_router.post("/admin/banner")
+async def create_banner(
+    banner: BannerImage,
+    token: str = Query(...)
+):
+    """Create a new banner (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    banner_data = banner.model_dump()
+    banner_data["id"] = str(uuid.uuid4())
+    banner_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    banner_data["created_by"] = user["id"]
+    
+    await db.banners.insert_one(banner_data)
+    
+    return {"message": "Bannière créée", "banner": banner_data}
+
+
+@api_router.put("/admin/banner/{banner_id}")
+async def update_banner(
+    banner_id: str,
+    banner: BannerImage,
+    token: str = Query(...)
+):
+    """Update a banner (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    banner_data = banner.model_dump(exclude_none=True)
+    banner_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.banners.update_one(
+        {"id": banner_id},
+        {"$set": banner_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Bannière non trouvée")
+    
+    return {"message": "Bannière mise à jour"}
+
+
+@api_router.delete("/admin/banner/{banner_id}")
+async def delete_banner(
+    banner_id: str,
+    token: str = Query(...)
+):
+    """Delete a banner (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    result = await db.banners.delete_one({"id": banner_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Bannière non trouvée")
+    
+    return {"message": "Bannière supprimée"}
+
+
+@api_router.get("/admin/videos")
+async def get_videos(token: str = Query(...)):
+    """Get all videos (Admin)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    videos = await db.videos.find({}, {"_id": 0}).to_list(1000)
+    return videos
+
+
+@api_router.post("/admin/video")
+async def create_video(
+    video: VideoContent,
+    token: str = Query(...)
+):
+    """Create/Add a video (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    video_data = video.model_dump()
+    video_data["id"] = str(uuid.uuid4())
+    video_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    video_data["created_by"] = user["id"]
+    
+    await db.videos.insert_one(video_data)
+    
+    return {"message": "Vidéo ajoutée", "video": video_data}
+
+
+@api_router.delete("/admin/video/{video_id}")
+async def delete_video(
+    video_id: str,
+    token: str = Query(...)
+):
+    """Delete a video (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    result = await db.videos.delete_one({"id": video_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Vidéo non trouvée")
+    
+    return {"message": "Vidéo supprimée"}
+
+
+@api_router.post("/admin/upload-media")
+async def upload_media(
+    file: UploadFile = File(...),
+    token: str = Query(...)
+):
+    """Upload image or video file (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    # Validate file type
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm', '.mov'}
+    file_ext = Path(file.filename).suffix.lower()
+    
+    if file_ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Type de fichier non autorisé")
+    
+    # Create uploads directory if not exists
+    uploads_dir = Path("/app/backend/uploads/media")
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate unique filename
+    file_id = str(uuid.uuid4())
+    file_name = f"{file_id}{file_ext}"
+    file_path = uploads_dir / file_name
+    
+    # Save file
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Return URL
+    media_url = f"/api/media/{file_name}"
+    
+    return {
+        "message": "Fichier uploadé",
+        "url": media_url,
+        "filename": file.filename,
+        "type": "image" if file_ext in {'.jpg', '.jpeg', '.png', '.gif', '.webp'} else "video"
+    }
+
+
+@api_router.get("/media/{filename}")
+async def get_media(filename: str):
+    """Serve uploaded media files"""
+    file_path = Path("/app/backend/uploads/media") / filename
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Fichier non trouvé")
+    
+    return FileResponse(path=file_path)
+
+
+@api_router.put("/admin/user/{user_id}/promote")
+async def promote_user_to_admin(
+    user_id: str,
+    token: str = Query(...)
+):
+    """Promote a user to admin role (Admin only)"""
+    user = await get_current_user(token)
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
+    
+    target_user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    
+    # Update role to admin
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"role": "admin", "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {
+        "message": f"Utilisateur {target_user['email']} promu administrateur",
+        "user": {
+            "id": user_id,
+            "email": target_user["email"],
+            "role": "admin"
+        }
+    }
 
 
 # ============== ROOT API ==============
