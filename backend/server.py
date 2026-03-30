@@ -3115,12 +3115,12 @@ async def update_site_customization(
         raise HTTPException(status_code=403, detail="Accès réservé aux administrateurs")
     
     customization_data = customization.model_dump(exclude_none=True)
-    customization_data["type"] = "main"
     customization_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     customization_data["updated_by"] = user["id"]
     
-    await db.site_customization.update_one(
-        {"type": "main"},
+    # Utiliser la même collection que GET
+    await db.customization_settings.update_one(
+        {},
         {"$set": customization_data},
         upsert=True
     )
