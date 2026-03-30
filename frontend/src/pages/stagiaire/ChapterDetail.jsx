@@ -57,10 +57,24 @@ const StagiaireChapterDetail = () => {
         }
     };
 
-    const renderContent = (content) => {
-        const lines = content.split('\n');
+    // Fonction pour afficher le contenu HTML formaté de manière sécurisée
+    const renderContent = (htmlContent) => {
+        if (!htmlContent) return null;
+        
+        // Si le contenu contient des balises HTML (éditeur riche)
+        if (htmlContent.includes('<')) {
+            return (
+                <div 
+                    className="prose prose-slate max-w-none rich-text-content"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+            );
+        }
+        
+        // Sinon, traiter comme du texte simple avec formatage basique (ancien format)
+        const lines = htmlContent.split('\n');
         return lines.map((line, index) => {
-            const lineKey = `line-${index}-${line.substring(0, 20)}`; // More stable key
+            const lineKey = `line-${index}-${line.substring(0, 20)}`;
             if (line.startsWith('**') && line.endsWith('**')) {
                 return (
                     <h3 key={lineKey} className="font-semibold text-slate-900 mt-4 mb-2">

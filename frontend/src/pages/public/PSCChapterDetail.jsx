@@ -39,10 +39,20 @@ const PSCChapterDetail = () => {
         }
     };
 
-    const renderContent = (content) => {
-        if (!content) return null;
+    const renderContent = (htmlContent) => {
+        if (!htmlContent) return null;
         
-        const lines = content.split('\n');
+        // Si le contenu contient des balises HTML (éditeur riche)
+        if (htmlContent.includes('<p>') || htmlContent.includes('<h1>') || htmlContent.includes('<div>')) {
+            return (
+                <div 
+                    className="prose prose-slate max-w-none rich-text-content"
+                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+            );
+        }
+        
+        const lines = htmlContent.split('\n');
         return lines.map((line, index) => {
             // Headers (##)
             if (line.startsWith('## ')) {

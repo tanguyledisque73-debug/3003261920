@@ -20,8 +20,10 @@ import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import Layout from '../../components/Layout';
 import VideoUploader from '../../components/VideoUploader';
+import RichTextEditor from '../../components/RichTextEditor';
 import { getChapter, adminCreateChapter, adminUpdateChapter, getUser } from '../../lib/api';
 import { toast } from 'sonner';
+import logger from '../../utils/logger';
 
 const AdminChapterEditor = () => {
     const { chapterId } = useParams();
@@ -67,7 +69,7 @@ const AdminChapterEditor = () => {
                 fiches: chapter.fiches || []
             });
         } catch (error) {
-            console.error('Erreur:', error);
+            logger.logError(error, 'ChapterEditor.loadChapter');
             toast.error('Erreur lors du chargement');
         } finally {
             setLoading(false);
@@ -296,17 +298,13 @@ const AdminChapterEditor = () => {
                                             </div>
 
                                             <div>
-                                                <Label>Contenu (Markdown supporté)</Label>
-                                                <Textarea
+                                                <Label>Contenu de la fiche *</Label>
+                                                <RichTextEditor
                                                     value={fiche.contenu}
-                                                    onChange={(e) => updateFiche(index, 'contenu', e.target.value)}
-                                                    placeholder="Écrivez le contenu de la fiche... Vous pouvez utiliser ## pour les titres, ** pour le gras, - pour les listes, etc."
-                                                    rows={8}
-                                                    className="font-mono text-sm"
+                                                    onChange={(value) => updateFiche(index, 'contenu', value)}
+                                                    placeholder="Écrivez le contenu de la fiche avec mise en forme..."
+                                                    height="400px"
                                                 />
-                                                <p className="text-xs text-slate-500 mt-1">
-                                                    Astuce : Utilisez ## pour les titres, ### pour sous-titres, ** pour gras, - pour listes
-                                                </p>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
