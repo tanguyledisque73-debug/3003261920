@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     ArrowLeft, 
@@ -15,6 +15,7 @@ import { Progress } from '../../components/ui/progress';
 import Layout from '../../components/Layout';
 import { getQuizByChapter, getChapter, submitQuiz, getUser, stagiaireGetChapitres } from '../../lib/api';
 import { toast } from 'sonner';
+import logger from '../../utils/logger';
 
 const StagiaireQuiz = () => {
     const { chapterId } = useParams();
@@ -32,15 +33,7 @@ const StagiaireQuiz = () => {
     const [submitting, setSubmitting] = useState(false);
     const [seuil, setSeuil] = useState(80);
 
-    useEffect(() => {
-        if (!user || user.role !== 'stagiaire') {
-            navigate('/login');
-            return;
-        }
-        loadData();
-    }, [chapterId, user, navigate]); // Added dependencies
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [quizData, chapterData, progressData] = await Promise.all([
                 getQuizByChapter(chapterId),
@@ -61,12 +54,20 @@ const StagiaireQuiz = () => {
             setSeuil(progressData.seuil_reussite || 80);
             setAnswers(new Array(quizData.questions.length).fill(-1));
         } catch (error) {
-            console.error('Erreur:', error);
+            logger.logError(error, 'StagiaireQuiz.loadData');
             toast.error('Quiz non disponible');
         } finally {
             setLoading(false);
         }
-    };
+    }, [chapterId, navigate]);
+
+    useEffect(() => {
+        if (!user || user.role !== 'stagiaire') {
+            navigate('/login');
+            return;
+        }
+        loadData();
+    }, [user, navigate, loadData]);
 
     const handleSelectAnswer = (answerIndex) => {
         setSelectedAnswer(answerIndex);
@@ -115,7 +116,7 @@ const StagiaireQuiz = () => {
                 toast.error(`Score insuffisant. Il vous faut ${seuil}% minimum.`);
             }
         } catch (error) {
-            console.error('Erreur:', error);
+            logger.logError(error, 'StagiaireQuiz.handleSubmit');
             toast.error('Erreur lors de la soumission');
         } finally {
             setSubmitting(false);

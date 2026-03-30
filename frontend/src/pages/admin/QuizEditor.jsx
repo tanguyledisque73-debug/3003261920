@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
     ArrowLeft,
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import Layout from '../../components/Layout';
 import { getQuizById, getQuizByChapter, getChapters, adminCreateQuiz, adminUpdateQuiz, getUser } from '../../lib/api';
 import { toast } from 'sonner';
+import logger from '../../utils/logger';
 
 const AdminQuizEditor = () => {
     const { quizId } = useParams();
@@ -33,15 +34,7 @@ const AdminQuizEditor = () => {
         questions: []
     });
 
-    useEffect(() => {
-        if (!user || user.role !== 'admin') {
-            navigate('/login');
-            return;
-        }
-        loadData();
-    }, [quizId, user, navigate]); // Added dependencies
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const chaptersData = await getChapters();
             setChapters(chaptersData);
@@ -63,14 +56,22 @@ const AdminQuizEditor = () => {
                 });
             }
         } catch (error) {
-            console.error('Erreur:', error);
+            logger.logError(error, 'QuizEditor.loadData');
             if (isEditing) {
                 toast.error('Quiz non trouvé');
             }
         } finally {
             setLoading(false);
         }
-    };
+    }, [quizId, isEditing]);
+
+    useEffect(() => {
+        if (!user || user.role !== 'admin') {
+            navigate('/login');
+            return;
+        }
+        loadData();
+    }, [user, navigate, loadData]);
 
     const addQuestion = () => {
         setFormData({

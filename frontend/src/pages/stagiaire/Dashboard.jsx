@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
     BookOpen, 
@@ -18,6 +18,7 @@ import Layout from '../../components/Layout';
 import { stagiaireGetProgress, stagiaireGetChapitres, getUser, getCertificateStatus, generateCertificate } from '../../lib/api';
 import { toast } from 'sonner';
 import { CertificateBanner, CertificatePDF, CertificateProgress } from '../../components/Certificate';
+import logger from '../../utils/logger';
 
 const StagiaireDashboard = () => {
     const navigate = useNavigate();
@@ -38,7 +39,7 @@ const StagiaireDashboard = () => {
         loadData();
     }, [user, navigate]); // Added dependencies
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             const [progress, chapitresData, certStatus] = await Promise.all([
                 stagiaireGetProgress(),
@@ -50,12 +51,20 @@ const StagiaireDashboard = () => {
             setSeuil(chapitresData.seuil_reussite || 80);
             setCertificateStatus(certStatus);
         } catch (error) {
-            console.error('Erreur:', error);
+            logger.logError(error, 'StagiaireDashboard.loadData');
             toast.error('Erreur lors du chargement des données');
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (!user || user.role !== 'stagiaire') {
+            navigate('/login');
+            return;
+        }
+        loadData();
+    }, [user, navigate, loadData]);
 
     const handleViewCertificate = async () => {
         try {
